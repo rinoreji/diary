@@ -26,5 +26,5 @@ jobs:
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: gh-pages
-        folder: dist/notes-app
+        folder: dist/notes-app/browser
         token: ${{ secrets.GH_TOKEN }}
