@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "notes-app": {
+    "diary": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -62,10 +62,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "notes-app:build:production"
+              "buildTarget": "diary:build:production"
             },
             "development": {
-              "buildTarget": "notes-app:build:development"
+              "buildTarget": "diary:build:development"
             }
           },
           "defaultConfiguration": "development"
