@@ -20,7 +20,7 @@ jobs:
       run: npm ci
 
     - name: Build Angular app
-      run: npm run build -- --base-href=/EchoNote/
+      run: npm run build -- --base-href=/echonote/
 
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
