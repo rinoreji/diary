@@ -1,4 +1,3 @@
-
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
@@ -24,9 +23,12 @@ import { CommonModule } from '@angular/common';
 })
 export class App {
   constructor(public auth: AuthService) {}
+
   login() {
-    this.auth.loginWithGoogle().then(userCredential => {
-      console.log('Logged in:', userCredential.user?.displayName);
+    this.auth.loginWithGoogle().then((accessToken) => {
+      console.log('Access Token:', accessToken);
+    }).catch((error) => {
+      console.error('Login failed:', error);
     });
   }
 

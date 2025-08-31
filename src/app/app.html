@@ -2,6 +2,7 @@
   <ng-container *ngIf="auth.currentUser">
     <img class="user-photo" [src]="auth.currentUser.photoURL" matTooltip="{{ auth.currentUser.displayName }}">
     <span class="user-info">Welcome, {{ auth.currentUser.displayName }}!</span>
+    <button (click)="logout()" class="logout-button">Logout</button>
   </ng-container>
 </app-header>
 <main class="main-content">
