@@ -71,7 +71,7 @@ export class Home implements OnInit, OnDestroy {
           console.error('Error getting access token:', error);
         }
       }
-    }, 10000); // Save every 10 seconds
+    }, 25000); // Save every 25 seconds
   }
 
   ngOnDestroy() {
