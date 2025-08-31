@@ -1,0 +1,19 @@
+
+.app-title {
+	text-align: center;
+}
+
+.user-info {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.user-photo {
+	border-radius: 50%;
+	box-shadow: 0 1px 4px #0001;
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+}
