@@ -1,3 +1,29 @@
+// Login page container centering
+.login-container {
+	text-align: center;
+}
+
+// App title centering
+.app-title {
+	text-align: center;
+}
+
+// User info row
+.user-info {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+// User photo avatar
+.user-photo {
+	border-radius: 50%;
+	box-shadow: 0 1px 4px #0001;
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+}
 /* You can add global styles to this file, and also import other style files */
 
 
@@ -26,15 +52,20 @@ body {
 	justify-content: flex-start;
 }
 
+
 .responsive-container {
-	width: 100%;
-	max-width: var(--container-max-width);
+	width: 95vw;
+	min-height: 90vh;
 	margin: 2rem auto;
 	background: #fff;
 	border-radius: var(--border-radius);
-	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-	padding: 2rem 1.5rem;
+	box-shadow: none;
+	padding: 2rem 2rem;
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	transition: max-width 0.3s, padding 0.3s;
 }
 
 h1, h2, h3, h4, h5 {
@@ -42,21 +73,3 @@ h1, h2, h3, h4, h5 {
 	margin-top: 0;
 }
 
-@media (max-width: 600px) {
-	.responsive-container {
-		padding: 1rem 0.5rem;
-		margin: 1rem 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-	body {
-		padding: 0;
-	}
-}
-
-@media (min-width: 601px) and (max-width: 900px) {
-	.responsive-container {
-		max-width: 90vw;
-		padding: 1.5rem 1rem;
-	}
-}
