@@ -1,59 +1,99 @@
-# NotesApp
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.1.
 
-## Development server
+# Diary
 
-To start a local development server, run:
 
+A modern diary web application built with Angular 20, Angular Material, and Firebase authentication (Google Sign-In). Easily extensible, with protected routes and a clean architecture.
+
+---
+
+## Features
+- **Google Authentication** (Firebase)
+- **Protected Home Route** (auth guard)
+- **Angular Material UI**
+- **Responsive Design**
+- **GitHub Pages Deployment**
+- **Unit Testing with Jasmine/Karma**
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v22 recommended)
+- npm
+
+### Installation
 ```bash
+npm install
+```
+
+### Development Server
+```bash
+npm start
+# or
 ng serve
 ```
+Visit [http://localhost:4200/](http://localhost:4200/) in your browser.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+### Running Tests
 ```bash
-ng generate component component-name
+npm test
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### Building for Production
 ```bash
-ng generate --help
+npm run build
+```
+Build artifacts will be stored in the `dist/` directory.
+
+### Deployment
+Deployment is automated via GitHub Actions to GitHub Pages. See `.github/workflows/deploy.yml` for details.
+
+---
+
+## Project Structure
+```
+├── src/
+│   ├── app/
+│   │   ├── app.ts           # Root component
+│   │   ├── app.routes.ts    # Route definitions
+│   │   ├── auth-guard.ts    # Route guard
+│   │   ├── services/
+│   │   │   └── auth.service.ts # Auth logic
+│   │   └── components/
+│   │       ├── login/       # Login UI
+│   │       └── home/        # Home UI
+│   ├── environments/
+│   │   └── environment.ts   # Firebase config
+│   ├── main.ts              # App bootstrap
+│   └── styles.scss          # Global styles
+├── angular.json             # Angular config
+├── package.json             # NPM scripts & dependencies
+└── ...
 ```
 
-## Building
+---
 
-To build the project run:
+## Configuration
+- **Firebase:** Set credentials in `src/environments/environment.ts`.
+- **Angular Material Theme:** Uses `magenta-violet` prebuilt theme.
+- **TypeScript:** Strict mode enabled.
 
-```bash
-ng build
-```
+---
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Useful Commands
+- `ng generate component <name>` – Create a new component
+- `ng generate service <name>` – Create a new service
+- `ng test` – Run unit tests
+- `ng build` – Build the app
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Contributing
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-```bash
-ng test
-```
+---
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## License
+[MIT](LICENSE)
