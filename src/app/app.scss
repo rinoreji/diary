@@ -17,3 +17,12 @@
 	height: 40px;
 	object-fit: cover;
 }
+
+.main-content {
+	min-height: 70vh;
+	padding: 2rem 1rem 2rem 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: #fafafa;
+}

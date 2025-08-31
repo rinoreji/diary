@@ -1,10 +1,10 @@
-<div class="responsive-container">
-  <h1 style="text-align:center;">{{ title }}</h1>
-    @if(auth.currentUser){
-      <div class="user-info">
-    <img [src]="auth.currentUser.photoURL" class="user-photo">
-        <span>Welcome, {{ auth.currentUser.displayName }}!</span>
-      </div>
-    }
-  <router-outlet />
-</div>
+<app-header>
+  <ng-container *ngIf="auth.currentUser">
+    <img class="user-photo" [src]="auth.currentUser.photoURL" matTooltip="{{ auth.currentUser.displayName }}">
+    <span class="user-info">Welcome, {{ auth.currentUser.displayName }}!</span>
+  </ng-container>
+</app-header>
+<main class="main-content">
+  <router-outlet></router-outlet>
+</main>
+<app-footer></app-footer>
