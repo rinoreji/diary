@@ -1,29 +1,3 @@
-// Login page container centering
-.login-container {
-	text-align: center;
-}
-
-// App title centering
-.app-title {
-	text-align: center;
-}
-
-// User info row
-.user-info {
-	display: flex;
-	align-items: center;
-	gap: 1rem;
-	margin-bottom: 1rem;
-}
-
-// User photo avatar
-.user-photo {
-	border-radius: 50%;
-	box-shadow: 0 1px 4px #0001;
-	width: 40px;
-	height: 40px;
-	object-fit: cover;
-}
 /* You can add global styles to this file, and also import other style files */
 
 
@@ -52,6 +26,10 @@ body {
 	justify-content: flex-start;
 }
 
+h1, h2, h3, h4, h5 {
+	font-weight: 500;
+	margin-top: 0;
+}
 
 .responsive-container {
 	width: 95vw;
@@ -68,8 +46,29 @@ body {
 	transition: max-width 0.3s, padding 0.3s;
 }
 
-h1, h2, h3, h4, h5 {
-	font-weight: 500;
-	margin-top: 0;
+// Login page container centering
+.login-container {
+	text-align: center;
 }
 
+// App title centering
+.app-title {
+	text-align: center;
+}
+
+// User info row
+.user-info {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+// User photo avatar
+.user-photo {
+	border-radius: 50%;
+	box-shadow: 0 1px 4px #0001;
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+}
