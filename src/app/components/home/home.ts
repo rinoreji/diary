@@ -2,10 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DiaryEntry } from '../../interfaces/diary-entry.interface';
+import { DiaryEntry, Category, CategoryStats } from '../../interfaces/diary-entry.interface';
 import { AppDataService } from '../../services/app-data.service';
 import { GoogleSheetsStorageProvider } from '../../services/google-sheets-storage.service';
 import { AuthService } from '../../services/auth.service';
+import { DEFAULT_CATEGORIES, UNCATEGORIZED_CATEGORY } from '../../constants/categories.constants';
 import { v4 as uuidv4 } from 'uuid';
 
 @Component({
@@ -30,6 +31,15 @@ export class Home implements OnInit, OnDestroy {
   allEntries: DiaryEntry[] = [];
   selectedEntryId: string | null = null;
   isLoadingEntries: boolean = false;
+
+  // Category management
+  currentCategory: string = 'daily';
+  currentTags: string[] = [];
+  availableCategories: Category[] = DEFAULT_CATEGORIES;
+  categoryStats: CategoryStats[] = [];
+  selectedCategory: string = 'all';
+  newTag: string = '';
+  allTags: string[] = [];
 
   constructor(
     private appDataService: AppDataService,
@@ -57,8 +67,9 @@ export class Home implements OnInit, OnDestroy {
       // Initialize storage with valid token
       await this.appDataService.initialize(this.accessToken);
       
-      // Load all entries
+      // Load all entries and category stats
       await this.loadAllEntries();
+      await this.loadCategoryStats();
       
       // If there's a uniqueId in localStorage, select that entry
       const storedId = localStorage.getItem('current_entry_id');
@@ -125,12 +136,16 @@ export class Home implements OnInit, OnDestroy {
         this.currentVersion = entry.version;
         this.createdAt = entry.createdAt;
         this.selectedEntryId = entryId;
+        
+        // Load category and tags
+        this.currentCategory = entry.category || 'uncategorized';
+        this.currentTags = entry.tags ? [...entry.tags] : [];
 
         // Store in localStorage
         localStorage.setItem('current_entry_id', entryId);
         localStorage.setItem('diary_text', this.userText);
 
-        console.log('Selected entry:', entryId, 'version:', this.currentVersion);
+        console.log('Selected entry:', entryId, 'version:', this.currentVersion, 'category:', this.currentCategory);
       }
     } catch (error) {
       console.error('Error selecting entry:', error);
@@ -145,12 +160,16 @@ export class Home implements OnInit, OnDestroy {
     this.currentVersion = 1;
     this.createdAt = new Date().toISOString();
     this.selectedEntryId = null;
+    
+    // Reset category and tags to defaults
+    this.currentCategory = 'daily';
+    this.currentTags = [];
 
     // Store in localStorage
     localStorage.setItem('current_entry_id', this.uniqueId);
     localStorage.setItem('diary_text', '');
 
-    console.log('Created new entry:', this.uniqueId);
+    console.log('Created new entry:', this.uniqueId, 'category:', this.currentCategory);
   }
 
   // Save current entry
@@ -172,6 +191,8 @@ export class Home implements OnInit, OnDestroy {
       const entry: DiaryEntry = {
         uniqueId: this.uniqueId,
         text: this.userText,
+        category: this.currentCategory,
+        tags: [...this.currentTags],
         createdAt: this.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         version: this.currentVersion
@@ -317,5 +338,68 @@ export class Home implements OnInit, OnDestroy {
         console.error('Error clearing data:', error);
       }
     }
+  }
+
+  // Category management methods
+  onCategoryChange(): void {
+    this.loadFilteredEntries();
+  }
+
+  async loadFilteredEntries(): Promise<void> {
+    if (!this.accessToken) return;
+
+    try {
+      if (this.selectedCategory === 'all') {
+        this.allEntries = await this.appDataService.getAllEntries(this.accessToken);
+      } else {
+        this.allEntries = await this.appDataService.getEntriesByCategory(this.accessToken, this.selectedCategory);
+      }
+    } catch (error) {
+      console.error('Error loading filtered entries:', error);
+    }
+  }
+
+  async loadCategoryStats(): Promise<void> {
+    if (!this.accessToken) return;
+
+    try {
+      this.categoryStats = await this.appDataService.getCategoryStats(this.accessToken);
+      this.allTags = await this.appDataService.getAllTags(this.accessToken);
+    } catch (error) {
+      console.error('Error loading category stats:', error);
+    }
+  }
+
+  addTag(): void {
+    if (this.newTag.trim() && !this.currentTags.includes(this.newTag.trim())) {
+      this.currentTags.push(this.newTag.trim());
+      this.newTag = '';
+    }
+  }
+
+  removeTag(tag: string): void {
+    this.currentTags = this.currentTags.filter(t => t !== tag);
+  }
+
+  getCategoryIcon(categoryId: string): string {
+    const category = this.availableCategories.find(cat => cat.id === categoryId);
+    return category?.icon || 'folder';
+  }
+
+  getCategoryName(categoryId: string): string {
+    const category = this.availableCategories.find(cat => cat.id === categoryId);
+    return category?.name || categoryId;
+  }
+
+  getCategoryColor(categoryId: string): string {
+    const category = this.availableCategories.find(cat => cat.id === categoryId);
+    return category?.color || '#9E9E9E';
+  }
+
+  getFilteredEntries(): DiaryEntry[] {
+    if (this.selectedCategory === 'all') {
+      return this.allEntries;
+    }
+    return this.allEntries.filter(entry => entry.category === this.selectedCategory);
   }
 }

@@ -97,7 +97,7 @@ export class GoogleSheetsStorageProvider implements StorageProvider {
     if (!this.spreadsheetId) return;
 
     const entriesHeaders = [
-      'Entry ID', 'Current Text', 'Created At', 'Updated At', 
+      'Entry ID', 'Current Text', 'Category', 'Tags', 'Created At', 'Updated At', 
       'Current Version', 'Total Versions', 'Storage Size'
     ];
 
@@ -187,6 +187,8 @@ export class GoogleSheetsStorageProvider implements StorageProvider {
     const values = [
       entry.uniqueId,
       entry.text,
+      entry.category || 'uncategorized',
+      entry.tags ? entry.tags.join(',') : '',
       entry.createdAt,
       entry.updatedAt,
       entry.version.toString(),
@@ -302,13 +304,15 @@ export class GoogleSheetsStorageProvider implements StorageProvider {
 
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        if (row.length >= 5) {
+        if (row.length >= 7) {
           const entry: DiaryEntry = {
             uniqueId: row[0],
             text: row[1],
-            createdAt: row[2],
-            updatedAt: row[3],
-            version: parseInt(row[4]) || 1
+            category: row[2] || 'uncategorized',
+            tags: row[3] ? row[3].split(',').filter((tag: string) => tag.trim()) : [],
+            createdAt: row[4],
+            updatedAt: row[5],
+            version: parseInt(row[6]) || 1
           };
           
           // Keep only the latest version for each entry
@@ -340,6 +344,8 @@ export class GoogleSheetsStorageProvider implements StorageProvider {
       reconstructedVersions.push({
         uniqueId: versionEntry.uniqueId,
         text: reconstructedText,
+        category: 'uncategorized', // Version history doesn't track category changes
+        tags: [],
         createdAt: versionEntry.timestamp,
         updatedAt: versionEntry.timestamp,
         version: versionEntry.version

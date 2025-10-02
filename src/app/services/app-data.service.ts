@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { DiaryEntry, DiaryEntryWithStats, AppDataStats } from '../interfaces/diary-entry.interface';
+import { DiaryEntry, DiaryEntryWithStats, AppDataStats, Category, CategoryStats } from '../interfaces/diary-entry.interface';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
 import { VersionManagerService } from './version-manager.service';
+import { DEFAULT_CATEGORIES, UNCATEGORIZED_CATEGORY } from '../constants/categories.constants';
 
 @Injectable({
   providedIn: 'root'
@@ -162,6 +163,8 @@ export class AppDataService {
         totalStorageSize: 0,
         averageCompressionRatio: 0,
         mostActiveEntry: '',
+        categoriesCount: 0,
+        entriesByCategory: {},
         recentEntries: []
       };
     }
@@ -190,12 +193,21 @@ export class AppDataService {
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 5);
 
+    // Calculate category statistics
+    const entriesByCategory: { [category: string]: number } = {};
+    entries.forEach(entry => {
+      const category = entry.category || 'uncategorized';
+      entriesByCategory[category] = (entriesByCategory[category] || 0) + 1;
+    });
+
     return {
       totalEntries: entries.length,
       totalVersions,
       totalStorageSize,
       averageCompressionRatio: entries.length > 0 ? totalCompressionRatio / entries.length : 0,
       mostActiveEntry,
+      categoriesCount: Object.keys(entriesByCategory).length,
+      entriesByCategory,
       recentEntries
     };
   }
@@ -307,5 +319,105 @@ export class AppDataService {
       return false;
     }
     return await this.storageProvider.testConnectivity(accessToken);
+  }
+
+  /**
+   * Get all available categories
+   */
+  getCategories(): Category[] {
+    return DEFAULT_CATEGORIES;
+  }
+
+  /**
+   * Get entries filtered by category
+   */
+  async getEntriesByCategory(accessToken: string, category: string): Promise<DiaryEntry[]> {
+    const allEntries = await this.getAllEntries(accessToken);
+    return allEntries.filter(entry => entry.category === category);
+  }
+
+  /**
+   * Get category statistics
+   */
+  async getCategoryStats(accessToken: string): Promise<CategoryStats[]> {
+    const allEntries = await this.getAllEntries(accessToken);
+    const categoryMap = new Map<string, CategoryStats>();
+
+    // Initialize with default categories
+    DEFAULT_CATEGORIES.forEach(cat => {
+      categoryMap.set(cat.id, {
+        category: cat.id,
+        entryCount: 0,
+        totalVersions: 0,
+        storageSize: 0,
+        lastActivity: ''
+      });
+    });
+
+    // Count entries by category
+    for (const entry of allEntries) {
+      const category = entry.category || 'uncategorized';
+      let stats = categoryMap.get(category);
+      
+      if (!stats) {
+        stats = {
+          category,
+          entryCount: 0,
+          totalVersions: 0,
+          storageSize: 0,
+          lastActivity: ''
+        };
+        categoryMap.set(category, stats);
+      }
+
+      stats.entryCount++;
+      
+      // Update last activity
+      if (!stats.lastActivity || entry.updatedAt > stats.lastActivity) {
+        stats.lastActivity = entry.updatedAt;
+      }
+    }
+
+    return Array.from(categoryMap.values());
+  }
+
+  /**
+   * Search entries within a specific category
+   */
+  async searchInCategory(accessToken: string, searchTerm: string, category: string): Promise<DiaryEntry[]> {
+    const categoryEntries = await this.getEntriesByCategory(accessToken, category);
+    if (!searchTerm.trim()) {
+      return categoryEntries;
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    return categoryEntries.filter(entry =>
+      entry.text.toLowerCase().includes(searchLower) ||
+      entry.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
+    );
+  }
+
+  /**
+   * Get entries with specific tags
+   */
+  async getEntriesByTags(accessToken: string, tags: string[]): Promise<DiaryEntry[]> {
+    const allEntries = await this.getAllEntries(accessToken);
+    return allEntries.filter(entry =>
+      entry.tags?.some((tag: string) => tags.includes(tag))
+    );
+  }
+
+  /**
+   * Get all unique tags across all entries
+   */
+  async getAllTags(accessToken: string): Promise<string[]> {
+    const allEntries = await this.getAllEntries(accessToken);
+    const tagSet = new Set<string>();
+    
+    allEntries.forEach(entry => {
+      entry.tags?.forEach((tag: string) => tagSet.add(tag));
+    });
+
+    return Array.from(tagSet).sort();
   }
 }

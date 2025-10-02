@@ -239,3 +239,240 @@
     font-size: 14px;
   }
 }
+
+/* Category and Tag Styles */
+.category-filter {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.category-filter label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.category-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.category-stats {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.category-stats h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  background: white;
+  border-radius: 4px;
+  border-left: 3px solid #ddd;
+  font-size: 12px;
+}
+
+.stat-category {
+  font-weight: 500;
+}
+
+.stat-count {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.entry-category {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  text-transform: uppercase;
+}
+
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Editor Header and Metadata */
+.editor-header {
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+}
+
+.editor-header h2 {
+  margin: 0 0 15px 0;
+  color: #673ab7;
+}
+
+.entry-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.metadata-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.category-selector {
+  flex: 1;
+}
+
+.category-selector label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.tags-section {
+  flex: 2;
+}
+
+.tags-section label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  min-height: 38px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #1976d2;
+  margin-left: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-remove:hover {
+  background: rgba(25, 118, 210, 0.1);
+  border-radius: 50%;
+}
+
+.tag-input-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag-input {
+  border: none;
+  outline: none;
+  padding: 4px;
+  font-size: 12px;
+  min-width: 100px;
+  background: transparent;
+}
+
+.tag-add-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-add-btn:hover {
+  background: #45a049;
+}
+
+/* Mobile responsiveness for new features */
+@media (max-width: 768px) {
+  .metadata-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tags-container {
+    min-height: auto;
+  }
+  
+  .category-stats {
+    display: none; /* Hide on mobile to save space */
+  }
+}
