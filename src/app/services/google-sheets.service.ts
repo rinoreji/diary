@@ -228,6 +228,30 @@ export class GoogleSheetsService {
     }
   }
 
+  // Get all current entries (latest version of each unique entry)
+  async getAllCurrentEntries(accessToken: string): Promise<DiaryEntry[]> {
+    const allRows = await this.fetchAllRows(accessToken);
+    const entriesMap = new Map<string, DiaryEntry>();
+    
+    // Group by uniqueId and keep only the current version (Is Current = TRUE)
+    allRows.forEach((row: any) => {
+      if (row[5] === 'TRUE') { // Is Current column
+        const entry: DiaryEntry = {
+          uniqueId: row[0],
+          text: row[1],
+          createdAt: row[2],
+          updatedAt: row[3],
+          version: parseInt(row[4]) || 1
+        };
+        entriesMap.set(entry.uniqueId, entry);
+      }
+    });
+    
+    // Convert to array and sort by updatedAt (newest first)
+    const entries = Array.from(entriesMap.values());
+    return entries.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }
+
   // Get version history for an entry
   async getEntryVersions(accessToken: string, uniqueId: string): Promise<DiaryEntry[]> {
     const allRows = await this.fetchAllRows(accessToken);

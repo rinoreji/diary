@@ -1,22 +1,55 @@
 <div class="diary-container">
-	<h2>My Diary</h2>
-	<div class="diary-info" *ngIf="uniqueId">
-		<p><strong>Entry ID:</strong> {{ uniqueId }}</p>
-		<p><strong>Created:</strong> {{ createdAt | date:'medium' }}</p>
-		<p><strong>Version:</strong> {{ currentVersion }}</p>
-		<button (click)="viewVersionHistory()" class="version-btn">View Version History</button>
-		<button (click)="manualSave()" class="version-btn" style="margin-left: 10px;">Manual Save</button>
-	</div>
-	<textarea 
-		[(ngModel)]="userText" 
-		placeholder="Start writing your diary entry here..."
-		class="diary-textarea"
-		(blur)="onTextareaBlur()">
-	</textarea>
-	<div class="save-status" *ngIf="lastSavedText === userText && userText">
-		✓ Saved automatically
-	</div>
-	<div class="save-status pending" *ngIf="lastSavedText !== userText && userText">
-		⏳ Changes pending...
+	<div class="diary-layout">
+		<!-- Entries Sidebar -->
+		<div class="entries-sidebar">
+			<div class="sidebar-header">
+				<h3>My Diary Entries</h3>
+				<button (click)="createNewEntry()" class="new-entry-btn">+ New Entry</button>
+			</div>
+			
+			<div class="entries-list" *ngIf="!isLoadingEntries">
+				<div 
+					*ngFor="let entry of allEntries" 
+					class="entry-item"
+					[class.selected]="selectedEntryId === entry.uniqueId"
+					(click)="selectEntry(entry.uniqueId)">
+					<div class="entry-preview">{{ getEntryPreview(entry) }}</div>
+					<div class="entry-meta">
+						<span class="entry-date">{{ getFormattedDate(entry.updatedAt) }}</span>
+						<span class="entry-version">v{{ entry.version }}</span>
+					</div>
+				</div>
+				
+				<div *ngIf="allEntries.length === 0" class="no-entries">
+					No entries yet. Create your first entry!
+				</div>
+			</div>
+			
+			<div *ngIf="isLoadingEntries" class="loading">Loading entries...</div>
+		</div>
+
+		<!-- Main Editor -->
+		<div class="main-editor">
+			<h2>My Diary</h2>
+			<div class="diary-info" *ngIf="uniqueId">
+				<p><strong>Entry ID:</strong> {{ uniqueId }}</p>
+				<p><strong>Created:</strong> {{ createdAt | date:'medium' }}</p>
+				<p><strong>Version:</strong> {{ currentVersion }}</p>
+				<button (click)="viewVersionHistory()" class="version-btn">View Version History</button>
+				<button (click)="manualSave()" class="version-btn" style="margin-left: 10px;">Manual Save</button>
+			</div>
+			<textarea 
+				[(ngModel)]="userText" 
+				placeholder="Start writing your diary entry here..."
+				class="diary-textarea"
+				(blur)="onTextareaBlur()">
+			</textarea>
+			<div class="save-status" *ngIf="lastSavedText === userText && userText">
+				✓ Saved automatically
+			</div>
+			<div class="save-status pending" *ngIf="lastSavedText !== userText && userText">
+				⏳ Changes pending...
+			</div>
+		</div>
 	</div>
 </div>

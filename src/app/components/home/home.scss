@@ -1,11 +1,128 @@
 .diary-container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 20px auto;
   padding: 20px;
   font-family: 'Roboto', sans-serif;
 }
 
-.diary-container h2 {
+.diary-layout {
+  display: flex;
+  gap: 20px;
+  min-height: 600px;
+}
+
+/* Entries Sidebar */
+.entries-sidebar {
+  width: 300px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  color: #673ab7;
+  font-size: 18px;
+}
+
+.new-entry-btn {
+  background: #673ab7;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.new-entry-btn:hover {
+  background: #512da8;
+}
+
+.entries-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.entry-item {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+}
+
+.entry-item:hover {
+  border-color: #673ab7;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.entry-item.selected {
+  border-color: #673ab7;
+  background: #f3e5f5;
+}
+
+.entry-preview {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.entry-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+}
+
+.entry-date {
+  flex: 1;
+}
+
+.entry-version {
+  background: #e1bee7;
+  color: #4a148c;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.no-entries {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
+
+/* Main Editor */
+.main-editor {
+  flex: 1;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.main-editor h2 {
   color: #673ab7;
   margin-bottom: 20px;
   text-align: center;

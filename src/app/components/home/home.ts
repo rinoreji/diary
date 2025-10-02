@@ -23,6 +23,11 @@ export class Home implements OnInit, OnDestroy {
   createdAt: string | null = null; // Track creation time (public for template)
   private isSaving: boolean = false; // Prevent concurrent saves
   private saveTimeout: any = null; // Debounce save calls
+  
+  // Entry management
+  allEntries: DiaryEntry[] = []; // All diary entries
+  selectedEntryId: string | null = null; // Currently selected entry
+  isLoadingEntries: boolean = false;
 
   constructor(
     private googleSheetsService: GoogleSheetsService,
@@ -42,6 +47,7 @@ export class Home implements OnInit, OnDestroy {
     }
     if (savedId) {
       this.uniqueId = savedId;
+      this.selectedEntryId = savedId;
     }
     if (savedCreatedAt) {
       this.createdAt = savedCreatedAt;
@@ -50,22 +56,21 @@ export class Home implements OnInit, OnDestroy {
       this.currentVersion = parseInt(savedVersion) || 1;
     }
 
-    // Ensure the 'Diary' spreadsheet exists
+    // Ensure the 'Diary' spreadsheet exists and load entries
     try {
       this.accessToken = await this.authService.getValidAccessToken();
       if (this.accessToken) {
         await this.googleSheetsService.ensureDiarySpreadsheet(this.accessToken);
         
-        // If we have a unique ID, load the current entry from Google Sheets
+        // Load all entries
+        await this.loadAllEntries();
+        
+        // If we have a unique ID, select that entry, otherwise create new
         if (this.uniqueId) {
-          const currentEntry = await this.googleSheetsService.getCurrentEntry(this.accessToken, this.uniqueId);
-          if (currentEntry) {
-            this.userText = currentEntry.text;
-            this.lastSavedText = currentEntry.text;
-            this.currentVersion = currentEntry.version;
-            this.createdAt = currentEntry.createdAt;
-            localStorage.setItem('userText', this.userText);
-          }
+          this.selectEntry(this.uniqueId);
+        } else {
+          // If no saved entry, start with a new entry
+          this.createNewEntry();
         }
       } else {
         console.error('Failed to get valid access token.');
@@ -153,6 +158,9 @@ export class Home implements OnInit, OnDestroy {
       
       this.lastSavedText = this.userText;
       localStorage.setItem('userText', this.userText);
+      
+      // Refresh entries list after saving
+      await this.loadAllEntries();
     } finally {
       this.isSaving = false;
     }
@@ -307,6 +315,87 @@ export class Home implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error in API test:', error);
+    }
+  }
+
+  // Load all entries from Google Sheets
+  async loadAllEntries(): Promise<void> {
+    if (!this.accessToken) return;
+    
+    this.isLoadingEntries = true;
+    try {
+      this.allEntries = await this.googleSheetsService.getAllCurrentEntries(this.accessToken);
+      console.log('Loaded entries:', this.allEntries.length);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+    } finally {
+      this.isLoadingEntries = false;
+    }
+  }
+
+  // Select an entry to edit
+  selectEntry(entryId: string): void {
+    const entry = this.allEntries.find(e => e.uniqueId === entryId);
+    if (entry) {
+      // Save current entry if there are unsaved changes
+      if (this.userText && this.userText !== this.lastSavedText) {
+        this.debouncedSave('switching entries');
+      }
+      
+      // Switch to selected entry
+      this.uniqueId = entry.uniqueId;
+      this.selectedEntryId = entry.uniqueId;
+      this.userText = entry.text;
+      this.lastSavedText = entry.text;
+      this.currentVersion = entry.version;
+      this.createdAt = entry.createdAt;
+      
+      // Update localStorage
+      localStorage.setItem('uniqueId', this.uniqueId);
+      localStorage.setItem('userText', this.userText);
+      localStorage.setItem('createdAt', this.createdAt);
+      localStorage.setItem('currentVersion', this.currentVersion.toString());
+      
+      console.log('Switched to entry:', entry.uniqueId);
+    }
+  }
+
+  // Create a new entry
+  createNewEntry(): void {
+    // Save current entry if there are unsaved changes
+    if (this.userText && this.userText !== this.lastSavedText) {
+      this.debouncedSave('creating new entry');
+    }
+    
+    // Reset to new entry state
+    this.uniqueId = null;
+    this.selectedEntryId = null;
+    this.userText = '';
+    this.lastSavedText = '';
+    this.currentVersion = 1;
+    this.createdAt = null;
+    
+    // Clear localStorage for current entry
+    localStorage.removeItem('uniqueId');
+    localStorage.removeItem('userText');
+    localStorage.removeItem('createdAt');
+    localStorage.removeItem('currentVersion');
+    
+    console.log('Created new entry');
+  }
+
+  // Get entry preview text (first 50 characters)
+  getEntryPreview(entry: DiaryEntry): string {
+    return entry.text.length > 50 ? entry.text.substring(0, 50) + '...' : entry.text;
+  }
+
+  // Get formatted date for display
+  getFormattedDate(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return dateString;
     }
   }
 }
