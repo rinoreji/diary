@@ -1,4 +1,22 @@
-<div>
-	<p>home works!</p>
-	<textarea [(ngModel)]="userText" placeholder="Type here..."></textarea>
+<div class="diary-container">
+	<h2>My Diary</h2>
+	<div class="diary-info" *ngIf="uniqueId">
+		<p><strong>Entry ID:</strong> {{ uniqueId }}</p>
+		<p><strong>Created:</strong> {{ createdAt | date:'medium' }}</p>
+		<p><strong>Version:</strong> {{ currentVersion }}</p>
+		<button (click)="viewVersionHistory()" class="version-btn">View Version History</button>
+		<button (click)="manualSave()" class="version-btn" style="margin-left: 10px;">Manual Save</button>
+		<button (click)="testAPI()" class="version-btn" style="margin-left: 10px;">Test API</button>
+	</div>
+	<textarea 
+		[(ngModel)]="userText" 
+		placeholder="Start writing your diary entry here..."
+		class="diary-textarea">
+	</textarea>
+	<div class="save-status" *ngIf="lastSavedText === userText && userText">
+		✓ Saved automatically
+	</div>
+	<div class="save-status pending" *ngIf="lastSavedText !== userText && userText">
+		⏳ Changes pending...
+	</div>
 </div>
