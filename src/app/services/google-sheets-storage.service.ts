@@ -205,9 +205,85 @@ export class GoogleSheetsStorageProvider implements StorageProvider {
   }
 
   private async removeCurrentEntry(accessToken: string, entryId: string): Promise<void> {
-    // This would involve finding and deleting the specific row
-    // For simplicity, we'll let duplicates exist and filter on read
-    // In production, you'd implement proper row deletion
+    if (!this.spreadsheetId) return;
+
+    try {
+      // Get all current entries to find the rows to delete
+      const url = `${this.SHEETS_API_URL}/${this.spreadsheetId}/values/${this.ENTRIES_SHEET}!A:G`;
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      
+      const response: any = await firstValueFrom(this.http.get(url, { headers }));
+      const rows = response.values || [];
+      
+      if (rows.length <= 1) return; // No data rows to check
+
+      // Find all rows with the matching entry ID (in reverse order for deletion)
+      const rowsToDelete: number[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length > 0 && row[0] === entryId) {
+          rowsToDelete.push(i + 1); // +1 because sheets are 1-indexed
+        }
+      }
+
+      // Delete rows in reverse order so row numbers don't shift
+      for (const rowNumber of rowsToDelete.reverse()) {
+        await this.deleteSheetRow(accessToken, this.ENTRIES_SHEET, rowNumber);
+      }
+
+      console.log(`Removed ${rowsToDelete.length} old entries for ${entryId}`);
+    } catch (error) {
+      console.error('Error removing current entry:', error);
+      // Don't throw - we can continue with the append even if deletion fails
+    }
+  }
+
+  private async deleteSheetRow(accessToken: string, sheetName: string, rowNumber: number): Promise<void> {
+    if (!this.spreadsheetId) return;
+
+    // First, get the sheet ID for the sheet name
+    const sheetId = await this.getSheetId(accessToken, sheetName);
+    if (sheetId === null) return;
+
+    const batchUpdateRequest = {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNumber - 1, // 0-indexed for the API
+              endIndex: rowNumber
+            }
+          }
+        }
+      ]
+    };
+
+    const url = `${this.SHEETS_API_URL}/${this.spreadsheetId}:batchUpdate`;
+    const headers = { 
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    };
+
+    await firstValueFrom(this.http.post(url, batchUpdateRequest, { headers }));
+  }
+
+  private async getSheetId(accessToken: string, sheetName: string): Promise<number | null> {
+    if (!this.spreadsheetId) return null;
+
+    try {
+      const url = `${this.SHEETS_API_URL}/${this.spreadsheetId}`;
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      
+      const response: any = await firstValueFrom(this.http.get(url, { headers }));
+      const sheet = response.sheets?.find((s: any) => s.properties?.title === sheetName);
+      
+      return sheet?.properties?.sheetId ?? null;
+    } catch (error) {
+      console.error('Error getting sheet ID:', error);
+      return null;
+    }
   }
 
   async getCurrentEntries(accessToken: string): Promise<DiaryEntry[]> {
