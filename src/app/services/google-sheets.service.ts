@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { VersionManagerService, DeltaEntry } from './version-manager.service';
 
 export interface DiaryEntry {
   uniqueId: string;
@@ -9,6 +10,15 @@ export interface DiaryEntry {
   version: number;
 }
 
+export interface EfficientDiaryEntry {
+  uniqueId: string;
+  currentText: string;
+  createdAt: string;
+  updatedAt: string;
+  currentVersion: number;
+  versionHistory: DeltaEntry[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,8 +26,15 @@ export class GoogleSheetsService {
   private readonly DRIVE_API_URL = 'https://www.googleapis.com/drive/v3/files';
   private readonly SHEETS_API_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
   private spreadsheetId: string | null = null;
+  
+  // New sheet names for efficient versioning
+  private readonly ENTRIES_SHEET = 'Entries'; // Current entries
+  private readonly VERSIONS_SHEET = 'Versions'; // Version history with deltas
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private versionManager: VersionManagerService
+  ) {}
 
   // Ensure the 'Diary' spreadsheet exists
   async ensureDiarySpreadsheet(accessToken: string): Promise<void> {

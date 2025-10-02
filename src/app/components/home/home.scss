@@ -33,6 +33,12 @@
   font-size: 18px;
 }
 
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .new-entry-btn {
   background: #673ab7;
   color: white;
@@ -46,6 +52,21 @@
 
 .new-entry-btn:hover {
   background: #512da8;
+}
+
+.clear-data-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.clear-data-btn:hover {
+  background: #d32f2f;
 }
 
 .entries-list {

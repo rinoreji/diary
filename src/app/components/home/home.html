@@ -4,7 +4,10 @@
 		<div class="entries-sidebar">
 			<div class="sidebar-header">
 				<h3>My Diary Entries</h3>
-				<button (click)="createNewEntry()" class="new-entry-btn">+ New Entry</button>
+				<div class="sidebar-actions">
+					<button (click)="createNewEntry()" class="new-entry-btn">+ New Entry</button>
+					<button (click)="clearAllData()" class="clear-data-btn" title="Clear all data and start fresh">🗑️</button>
+				</div>
 			</div>
 			
 			<div class="entries-list" *ngIf="!isLoadingEntries">
@@ -13,9 +16,9 @@
 					class="entry-item"
 					[class.selected]="selectedEntryId === entry.uniqueId"
 					(click)="selectEntry(entry.uniqueId)">
-					<div class="entry-preview">{{ getEntryPreview(entry) }}</div>
+					<div class="entry-preview">{{ getEntryPreview(entry.text) }}</div>
 					<div class="entry-meta">
-						<span class="entry-date">{{ getFormattedDate(entry.updatedAt) }}</span>
+						<span class="entry-date">{{ formatDate(entry.updatedAt) }}</span>
 						<span class="entry-version">v{{ entry.version }}</span>
 					</div>
 				</div>
@@ -35,8 +38,7 @@
 				<p><strong>Entry ID:</strong> {{ uniqueId }}</p>
 				<p><strong>Created:</strong> {{ createdAt | date:'medium' }}</p>
 				<p><strong>Version:</strong> {{ currentVersion }}</p>
-				<button (click)="viewVersionHistory()" class="version-btn">View Version History</button>
-				<button (click)="manualSave()" class="version-btn" style="margin-left: 10px;">Manual Save</button>
+				<button (click)="manualSave()" class="version-btn">Save Now</button>
 			</div>
 			<textarea 
 				[(ngModel)]="userText" 
