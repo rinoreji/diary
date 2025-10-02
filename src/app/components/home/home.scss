@@ -137,6 +137,7 @@
 /* Main Editor */
 .main-editor {
   flex: 1;
+  max-width: calc(100% - 340px); /* Account for sidebar width + gap */
   background: white;
   border-radius: 8px;
   padding: 20px;
@@ -185,6 +186,7 @@
 
 .diary-textarea {
   width: 100%;
+  max-width: 800px; /* Limit maximum width */
   min-height: 400px;
   padding: 20px;
   border: 2px solid #e0e0e0;
@@ -195,6 +197,7 @@
   resize: vertical;
   outline: none;
   transition: border-color 0.3s;
+  box-sizing: border-box;
 }
 
 .diary-textarea:focus {
@@ -257,11 +260,13 @@
 
 .category-select {
   width: 100%;
+  max-width: 300px; /* Limit maximum width */
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
   background: white;
+  box-sizing: border-box;
 }
 
 .category-stats {
@@ -280,16 +285,19 @@
 .search-input-container {
   position: relative;
   margin-bottom: 10px;
+  max-width: 100%;
 }
 
 .search-input {
   width: 100%;
+  max-width: none; /* Remove max-width constraint for sidebar */
   padding: 10px 35px 10px 12px;
   border: 2px solid #ddd;
-  border-radius: 20px;
+  border-radius: 8px; /* More subtle rounded corners */
   font-size: 14px;
   background: white;
   transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
@@ -547,6 +555,19 @@
   margin-bottom: 5px;
 }
 
+/* Category select in main editor should be wider */
+.main-editor .category-selector .category-select {
+  width: 100%;
+  max-width: none; /* Remove width constraint in main editor */
+  min-width: 200px; /* Ensure minimum width */
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  box-sizing: border-box;
+}
+
 .tags-section {
   flex: 2;
 }
@@ -607,6 +628,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 200px; /* Limit container width */
 }
 
 .tag-input {
@@ -614,8 +636,10 @@
   outline: none;
   padding: 4px;
   font-size: 12px;
-  min-width: 100px;
+  min-width: 80px;
+  max-width: 150px; /* Limit maximum width */
   background: transparent;
+  flex-grow: 1;
 }
 
 .tag-add-btn {
@@ -761,12 +785,35 @@
   }
 
   /* Search mobile styles */
+  .search-input {
+    max-width: 100%;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
   .quick-search {
     justify-content: center;
   }
 
   .filter-toggles {
     justify-content: center;
+  }
+
+  .diary-textarea {
+    max-width: 100%;
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: 300px; /* Smaller on mobile */
+  }
+
+  .main-editor {
+    max-width: 100%;
+  }
+
+  .main-editor .category-selector .category-select {
+    min-width: 150px; /* Smaller minimum on mobile */
+  }
+
+  .tag-input-container {
+    max-width: 100%;
   }
 
   .date-range-filter {
