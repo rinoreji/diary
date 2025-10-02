@@ -67,9 +67,13 @@ export class Home implements OnInit, OnDestroy {
       // Initialize storage with valid token
       await this.appDataService.initialize(this.accessToken);
       
-      // Load all entries and category stats
+      // Load all entries (this will calculate local category stats)
       await this.loadAllEntries();
-      await this.loadCategoryStats();
+      
+      // Load detailed category stats from server (for accuracy, runs in background)
+      this.loadCategoryStats().catch(error => {
+        console.warn('Failed to load detailed category stats from server:', error);
+      });
       
       // If there's a uniqueId in localStorage, select that entry
       const storedId = localStorage.getItem('current_entry_id');
@@ -110,6 +114,10 @@ export class Home implements OnInit, OnDestroy {
     this.isLoadingEntries = true;
     try {
       this.allEntries = await this.appDataService.getAllEntries(this.accessToken);
+      
+      // Calculate local category stats after loading entries
+      this.calculateLocalCategoryStats();
+      
       console.log('Loaded entries:', this.allEntries.length);
     } catch (error) {
       console.error('Error loading entries:', error);
@@ -206,6 +214,9 @@ export class Home implements OnInit, OnDestroy {
 
       // Update localStorage
       localStorage.setItem('diary_text', this.userText);
+
+      // Update category stats locally for immediate UI feedback
+      this.updateLocalCategoryStats(entry);
 
       // Refresh entries list
       await this.loadAllEntries();
@@ -316,6 +327,16 @@ export class Home implements OnInit, OnDestroy {
     }
   }
 
+  // Preview category change impact (called when dropdown changes)
+  onCategorySelectionChange(): void {
+    // This is called when user changes category dropdown for current entry
+    // We can show preview or auto-save if needed
+    console.log('Category changed to:', this.currentCategory);
+    
+    // Trigger debounced save to apply category change
+    this.debouncedSave();
+  }
+
   // Clear all data (for testing)
   async clearAllData(): Promise<void> {
     if (!this.accessToken) return;
@@ -343,6 +364,12 @@ export class Home implements OnInit, OnDestroy {
   // Category management methods
   onCategoryChange(): void {
     this.loadFilteredEntries();
+  }
+
+  filterByCategory(category: string): void {
+    this.selectedCategory = category;
+    this.loadFilteredEntries();
+    console.log('Filtered by category:', category);
   }
 
   async loadFilteredEntries(): Promise<void> {
@@ -396,10 +423,120 @@ export class Home implements OnInit, OnDestroy {
     return category?.color || '#9E9E9E';
   }
 
+  getTotalEntriesCount(): number {
+    return this.allEntries.length;
+  }
+
   getFilteredEntries(): DiaryEntry[] {
     if (this.selectedCategory === 'all') {
       return this.allEntries;
     }
     return this.allEntries.filter(entry => entry.category === this.selectedCategory);
+  }
+
+  /**
+   * Update category stats locally for immediate UI feedback
+   */
+  updateLocalCategoryStats(savedEntry: DiaryEntry): void {
+    // Find existing entry in allEntries to check if category changed
+    const existingEntryIndex = this.allEntries.findIndex(e => e.uniqueId === savedEntry.uniqueId);
+    const isNewEntry = existingEntryIndex === -1;
+    const oldCategory = isNewEntry ? null : this.allEntries[existingEntryIndex].category;
+
+    // Update or add entry in allEntries
+    if (isNewEntry) {
+      this.allEntries.push(savedEntry);
+    } else {
+      this.allEntries[existingEntryIndex] = savedEntry;
+    }
+
+    // Update category stats
+    if (isNewEntry) {
+      // New entry: increment count for new category
+      this.incrementCategoryCount(savedEntry.category);
+    } else if (oldCategory !== savedEntry.category) {
+      // Category changed: decrement old, increment new
+      if (oldCategory) {
+        this.decrementCategoryCount(oldCategory);
+      }
+      this.incrementCategoryCount(savedEntry.category);
+    }
+
+    // Update last activity for the category
+    this.updateCategoryLastActivity(savedEntry.category, savedEntry.updatedAt);
+
+    console.log('Updated local category stats for:', savedEntry.category);
+  }
+
+  private incrementCategoryCount(category: string): void {
+    let stat = this.categoryStats.find(s => s.category === category);
+    if (!stat) {
+      stat = {
+        category,
+        entryCount: 0,
+        totalVersions: 0,
+        storageSize: 0,
+        lastActivity: ''
+      };
+      this.categoryStats.push(stat);
+    }
+    stat.entryCount++;
+  }
+
+  private decrementCategoryCount(category: string): void {
+    const stat = this.categoryStats.find(s => s.category === category);
+    if (stat && stat.entryCount > 0) {
+      stat.entryCount--;
+      // Remove stat if no entries left
+      if (stat.entryCount === 0) {
+        this.categoryStats = this.categoryStats.filter(s => s.category !== category);
+      }
+    }
+  }
+
+  private updateCategoryLastActivity(category: string, timestamp: string): void {
+    const stat = this.categoryStats.find(s => s.category === category);
+    if (stat) {
+      if (!stat.lastActivity || timestamp > stat.lastActivity) {
+        stat.lastActivity = timestamp;
+      }
+    }
+  }
+
+  /**
+   * Calculate category stats from current allEntries (client-side)
+   */
+  calculateLocalCategoryStats(): void {
+    const categoryMap = new Map<string, CategoryStats>();
+
+    // Reset stats
+    this.categoryStats = [];
+
+    // Count entries by category
+    for (const entry of this.allEntries) {
+      const category = entry.category || 'uncategorized';
+      let stats = categoryMap.get(category);
+      
+      if (!stats) {
+        stats = {
+          category,
+          entryCount: 0,
+          totalVersions: 0,
+          storageSize: 0,
+          lastActivity: ''
+        };
+        categoryMap.set(category, stats);
+      }
+
+      stats.entryCount++;
+      
+      // Update last activity
+      if (!stats.lastActivity || entry.updatedAt > stats.lastActivity) {
+        stats.lastActivity = entry.updatedAt;
+      }
+    }
+
+    this.categoryStats = Array.from(categoryMap.values());
+    console.log('Calculated local category stats:', this.categoryStats);
   }
 }

@@ -25,7 +25,23 @@
 			<div class="category-stats" *ngIf="categoryStats.length > 0">
 				<h4>Category Overview</h4>
 				<div class="stats-grid">
-					<div *ngFor="let stat of categoryStats" class="stat-item" [style.border-left-color]="getCategoryColor(stat.category)">
+					<!-- All Categories Option -->
+					<div class="stat-item" 
+						 [class.active]="selectedCategory === 'all'"
+						 style="border-left-color: #9c27b0"
+						 (click)="filterByCategory('all')"
+						 title="Show all entries">
+						<span class="stat-category">All Categories</span>
+						<span class="stat-count">{{ getTotalEntriesCount() }}</span>
+					</div>
+					
+					<!-- Individual Categories -->
+					<div *ngFor="let stat of categoryStats" 
+						 class="stat-item" 
+						 [class.active]="selectedCategory === stat.category"
+						 [style.border-left-color]="getCategoryColor(stat.category)"
+						 (click)="filterByCategory(stat.category)"
+						 title="Click to filter by {{ getCategoryName(stat.category) }}">
 						<span class="stat-category">{{ getCategoryName(stat.category) }}</span>
 						<span class="stat-count">{{ stat.entryCount }}</span>
 					</div>
@@ -72,7 +88,7 @@
 					<div class="metadata-row">
 						<div class="category-selector">
 							<label for="entryCategory">Category:</label>
-							<select id="entryCategory" [(ngModel)]="currentCategory" class="category-select">
+							<select id="entryCategory" [(ngModel)]="currentCategory" (change)="onCategorySelectionChange()" class="category-select">
 								<option *ngFor="let category of availableCategories" [value]="category.id">
 									{{ category.name }}
 								</option>
