@@ -219,10 +219,10 @@ export class VersionManagerService {
     }
 
     const parts: string[] = [];
-    if (addedWords > 0) parts.push(`+${addedWords} words`);
-    if (removedWords > 0) parts.push(`-${removedWords} words`);
-    if (addedChars > 0 && addedWords === 0) parts.push(`+${addedChars} chars`);
-    if (removedChars > 0 && removedWords === 0) parts.push(`-${removedChars} chars`);
+    if (addedWords > 0) parts.push(`(+) ${addedWords} words`);
+    if (removedWords > 0) parts.push(`(-) ${removedWords} words`);
+    if (addedChars > 0 && addedWords === 0) parts.push(`(+) ${addedChars} chars`);
+    if (removedChars > 0 && removedWords === 0) parts.push(`(-) ${removedChars} chars`);
 
     return parts.length > 0 ? parts.join(', ') : 'Minor changes';
   }

@@ -32,6 +32,25 @@ export class Home implements OnInit, OnDestroy {
   selectedEntryId: string | null = null;
   isLoadingEntries: boolean = false;
 
+  // Search functionality
+  searchTerm: string = '';
+  searchResults: DiaryEntry[] = [];
+  isSearchMode: boolean = false;
+  searchFilters = {
+    content: true,
+    tags: true,
+    category: true,
+    dateRange: false,
+    startDate: '',
+    endDate: ''
+  };
+
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  totalPages: number = 1;
+  paginatedEntries: DiaryEntry[] = [];
+
   // Category management
   currentCategory: string = 'daily';
   currentTags: string[] = [];
@@ -117,6 +136,9 @@ export class Home implements OnInit, OnDestroy {
       
       // Calculate local category stats after loading entries
       this.calculateLocalCategoryStats();
+      
+      // Update pagination
+      this.updatePagination();
       
       console.log('Loaded entries:', this.allEntries.length);
     } catch (error) {
@@ -368,6 +390,7 @@ export class Home implements OnInit, OnDestroy {
 
   filterByCategory(category: string): void {
     this.selectedCategory = category;
+    this.currentPage = 1; // Reset to first page when filtering
     this.loadFilteredEntries();
     console.log('Filtered by category:', category);
   }
@@ -381,6 +404,9 @@ export class Home implements OnInit, OnDestroy {
       } else {
         this.allEntries = await this.appDataService.getEntriesByCategory(this.accessToken, this.selectedCategory);
       }
+      
+      // Update pagination after filtering
+      this.updatePagination();
     } catch (error) {
       console.error('Error loading filtered entries:', error);
     }
@@ -428,6 +454,12 @@ export class Home implements OnInit, OnDestroy {
   }
 
   getFilteredEntries(): DiaryEntry[] {
+    // If in search mode, return search results
+    if (this.isSearchMode) {
+      return this.searchResults;
+    }
+
+    // Otherwise, return category-filtered entries
     if (this.selectedCategory === 'all') {
       return this.allEntries;
     }
@@ -538,5 +570,249 @@ export class Home implements OnInit, OnDestroy {
 
     this.categoryStats = Array.from(categoryMap.values());
     console.log('Calculated local category stats:', this.categoryStats);
+  }
+
+  // Pagination methods
+  updatePagination(): void {
+    const filteredEntries = this.getFilteredEntries();
+    this.totalPages = Math.ceil(filteredEntries.length / this.pageSize);
+    
+    // Ensure current page is valid
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = Math.max(1, this.totalPages);
+    }
+    
+    // Calculate start and end indices
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    
+    // Get paginated entries
+    this.paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+    
+    console.log(`Pagination: Page ${this.currentPage}/${this.totalPages}, Showing ${this.paginatedEntries.length} of ${filteredEntries.length} entries`);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  goToFirstPage(): void {
+    this.goToPage(1);
+  }
+
+  goToLastPage(): void {
+    this.goToPage(this.totalPages);
+  }
+
+  goToNextPage(): void {
+    this.goToPage(this.currentPage + 1);
+  }
+
+  goToPreviousPage(): void {
+    this.goToPage(this.currentPage - 1);
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    const halfVisible = Math.floor(maxVisiblePages / 2);
+    
+    let startPage = Math.max(1, this.currentPage - halfVisible);
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
+  changePageSize(newSize: number): void {
+    this.pageSize = newSize;
+    this.currentPage = 1; // Reset to first page
+    this.updatePagination();
+  }
+
+  getPaginationInfo(): string {
+    const filteredEntries = this.getFilteredEntries();
+    const startIndex = (this.currentPage - 1) * this.pageSize + 1;
+    const endIndex = Math.min(this.currentPage * this.pageSize, filteredEntries.length);
+    
+    if (filteredEntries.length === 0) {
+      return 'No entries to display';
+    }
+    
+    return `Showing ${startIndex}-${endIndex} of ${filteredEntries.length} entries`;
+  }
+
+  // Search functionality methods
+  onSearchInput(): void {
+    if (this.searchTerm.trim()) {
+      this.performSearch();
+    } else {
+      this.clearSearch();
+    }
+  }
+
+  performSearch(): void {
+    if (!this.searchTerm.trim()) {
+      this.clearSearch();
+      return;
+    }
+
+    this.isSearchMode = true;
+    this.searchResults = this.searchEntries(this.searchTerm);
+    this.currentPage = 1; // Reset to first page
+    this.updatePagination();
+    
+    console.log(`Search for "${this.searchTerm}" found ${this.searchResults.length} results`);
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.isSearchMode = false;
+    this.searchResults = [];
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  searchEntries(term: string): DiaryEntry[] {
+    if (!term.trim()) return [];
+
+    const searchTerm = term.toLowerCase();
+    let entries = this.allEntries;
+
+    // Apply category filter first if not 'all'
+    if (this.selectedCategory !== 'all') {
+      entries = entries.filter(entry => entry.category === this.selectedCategory);
+    }
+
+    return entries.filter(entry => {
+      // Search in content
+      if (this.searchFilters.content && entry.text.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+
+      // Search in tags
+      if (this.searchFilters.tags && entry.tags?.some(tag => 
+        tag.toLowerCase().includes(searchTerm)
+      )) {
+        return true;
+      }
+
+      // Search in category
+      if (this.searchFilters.category) {
+        const categoryName = this.getCategoryName(entry.category).toLowerCase();
+        if (categoryName.includes(searchTerm)) {
+          return true;
+        }
+      }
+
+      // Search in dates
+      if (this.searchFilters.dateRange && this.searchFilters.startDate && this.searchFilters.endDate) {
+        const entryDate = new Date(entry.updatedAt);
+        const startDate = new Date(this.searchFilters.startDate);
+        const endDate = new Date(this.searchFilters.endDate);
+        
+        if (entryDate >= startDate && entryDate <= endDate) {
+          return true;
+        }
+      }
+
+      // Search in formatted dates (e.g., "today", "yesterday", month names)
+      const entryDate = new Date(entry.updatedAt);
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+      if (searchTerm === 'today' && this.isSameDay(entryDate, today)) {
+        return true;
+      }
+
+      if (searchTerm === 'yesterday' && this.isSameDay(entryDate, yesterday)) {
+        return true;
+      }
+
+      // Search month names
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+                         'july', 'august', 'september', 'october', 'november', 'december'];
+      const entryMonth = monthNames[entryDate.getMonth()];
+      if (entryMonth.includes(searchTerm)) {
+        return true;
+      }
+
+      return false;
+    });
+  }
+
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  }
+
+  toggleSearchFilter(filterName: keyof typeof this.searchFilters): void {
+    if (filterName === 'dateRange') {
+      this.searchFilters.dateRange = !this.searchFilters.dateRange;
+    } else if (filterName !== 'startDate' && filterName !== 'endDate') {
+      this.searchFilters[filterName] = !this.searchFilters[filterName];
+    }
+    
+    // Re-run search if we're in search mode
+    if (this.isSearchMode) {
+      this.performSearch();
+    }
+  }
+
+  getSearchResultsCount(): string {
+    if (!this.isSearchMode) return '';
+    
+    const count = this.searchResults.length;
+    if (count === 0) {
+      return 'No results found';
+    } else if (count === 1) {
+      return '1 result found';
+    } else {
+      return `${count} results found`;
+    }
+  }
+
+  highlightSearchTerm(text: string): string {
+    if (!this.isSearchMode || !this.searchTerm.trim()) {
+      return text;
+    }
+
+    const term = this.searchTerm.trim();
+    const regex = new RegExp(`(${term})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+  }
+
+  // Quick search shortcuts
+  searchToday(): void {
+    this.searchTerm = 'today';
+    this.performSearch();
+  }
+
+  searchYesterday(): void {
+    this.searchTerm = 'yesterday';
+    this.performSearch();
+  }
+
+  searchThisWeek(): void {
+    const today = new Date();
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    this.searchFilters.dateRange = true;
+    this.searchFilters.startDate = weekAgo.toISOString().split('T')[0];
+    this.searchFilters.endDate = today.toISOString().split('T')[0];
+    this.searchTerm = 'this week';
+    this.performSearch();
   }
 }

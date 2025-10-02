@@ -10,6 +10,77 @@
 				</div>
 			</div>
 
+			<!-- Search Bar -->
+			<div class="search-container">
+				<div class="search-input-container">
+					<input 
+						type="text" 
+						[(ngModel)]="searchTerm" 
+						(input)="onSearchInput()"
+						placeholder="Search entries, tags, categories..."
+						class="search-input">
+					<button 
+						*ngIf="searchTerm" 
+						(click)="clearSearch()" 
+						class="search-clear-btn"
+						title="Clear search">
+						×
+					</button>
+				</div>
+
+				<!-- Search Results Info -->
+				<div class="search-info" *ngIf="isSearchMode">
+					<span class="search-results-count">{{ getSearchResultsCount() }}</span>
+				</div>
+
+				<!-- Quick Search Buttons -->
+				<div class="quick-search" *ngIf="!isSearchMode">
+					<button (click)="searchToday()" class="quick-search-btn">Today</button>
+					<button (click)="searchYesterday()" class="quick-search-btn">Yesterday</button>
+					<button (click)="searchThisWeek()" class="quick-search-btn">This Week</button>
+				</div>
+
+				<!-- Advanced Search Filters -->
+				<div class="search-filters" *ngIf="isSearchMode">
+					<div class="filter-toggles">
+						<label class="filter-toggle">
+							<input type="checkbox" [(ngModel)]="searchFilters.content" (change)="toggleSearchFilter('content')">
+							<span>Content</span>
+						</label>
+						<label class="filter-toggle">
+							<input type="checkbox" [(ngModel)]="searchFilters.tags" (change)="toggleSearchFilter('tags')">
+							<span>Tags</span>
+						</label>
+						<label class="filter-toggle">
+							<input type="checkbox" [(ngModel)]="searchFilters.category" (change)="toggleSearchFilter('category')">
+							<span>Category</span>
+						</label>
+					</div>
+
+					<!-- Date Range Filter -->
+					<div class="date-range-filter" *ngIf="searchFilters.dateRange">
+						<input 
+							type="date" 
+							[(ngModel)]="searchFilters.startDate" 
+							(change)="performSearch()"
+							class="date-input">
+						<span>to</span>
+						<input 
+							type="date" 
+							[(ngModel)]="searchFilters.endDate" 
+							(change)="performSearch()"
+							class="date-input">
+					</div>
+
+					<button 
+						(click)="toggleSearchFilter('dateRange')" 
+						class="date-range-toggle"
+						[class.active]="searchFilters.dateRange">
+						📅 Date Range
+					</button>
+				</div>
+			</div>
+
 			<!-- Category Filter -->
 			<div class="category-filter">
 				<label for="categoryFilter">Filter by Category:</label>
@@ -49,8 +120,14 @@
 			</div>
 			
 			<div class="entries-list" *ngIf="!isLoadingEntries">
+				<!-- Pagination Info -->
+				<div class="pagination-info">
+					{{ getPaginationInfo() }}
+				</div>
+
+				<!-- Entries List -->
 				<div 
-					*ngFor="let entry of getFilteredEntries()" 
+					*ngFor="let entry of paginatedEntries" 
 					class="entry-item"
 					[class.selected]="selectedEntryId === entry.uniqueId"
 					(click)="selectEntry(entry.uniqueId)">
@@ -60,7 +137,7 @@
 						</span>
 						<span class="entry-version">v{{ entry.version }}</span>
 					</div>
-					<div class="entry-preview">{{ getEntryPreview(entry.text) }}</div>
+					<div class="entry-preview" [innerHTML]="highlightSearchTerm(getEntryPreview(entry.text))"></div>
 					<div class="entry-meta">
 						<span class="entry-date">{{ formatDate(entry.updatedAt) }}</span>
 						<div class="entry-tags" *ngIf="entry.tags && entry.tags.length > 0">
@@ -69,7 +146,64 @@
 					</div>
 				</div>
 				
-				<div *ngIf="getFilteredEntries().length === 0" class="no-entries">
+				<!-- Pagination Controls -->
+				<div class="pagination-container" *ngIf="totalPages > 1">
+					<div class="pagination-controls">
+						<!-- First/Previous buttons -->
+						<button 
+							(click)="goToFirstPage()" 
+							[disabled]="currentPage === 1"
+							class="pagination-btn"
+							title="First page">
+							&laquo;
+						</button>
+						<button 
+							(click)="goToPreviousPage()" 
+							[disabled]="currentPage === 1"
+							class="pagination-btn"
+							title="Previous page">
+							&lsaquo;
+						</button>
+
+						<!-- Page numbers -->
+						<button 
+							*ngFor="let page of getPageNumbers()"
+							(click)="goToPage(page)"
+							[class.active]="page === currentPage"
+							class="pagination-btn page-number">
+							{{ page }}
+						</button>
+
+						<!-- Next/Last buttons -->
+						<button 
+							(click)="goToNextPage()" 
+							[disabled]="currentPage === totalPages"
+							class="pagination-btn"
+							title="Next page">
+							&rsaquo;
+						</button>
+						<button 
+							(click)="goToLastPage()" 
+							[disabled]="currentPage === totalPages"
+							class="pagination-btn"
+							title="Last page">
+							&raquo;
+						</button>
+					</div>
+
+					<!-- Page size selector -->
+					<div class="page-size-selector">
+						<label for="pageSize">Show:</label>
+						<select id="pageSize" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)" class="page-size-select">
+							<option [value]="5">5 per page</option>
+							<option [value]="10">10 per page</option>
+							<option [value]="20">20 per page</option>
+							<option [value]="50">50 per page</option>
+						</select>
+					</div>
+				</div>
+				
+				<div *ngIf="paginatedEntries.length === 0 && !isLoadingEntries" class="no-entries">
 					<div *ngIf="selectedCategory === 'all'">No entries yet. Create your first entry!</div>
 					<div *ngIf="selectedCategory !== 'all'">No entries in this category yet.</div>
 				</div>
