@@ -21,6 +21,8 @@ export class Home implements OnInit, OnDestroy {
   lastSavedText: string | null = null; // Track the last saved text (public for template)
   currentVersion: number = 1; // Track current version number (public for template)
   createdAt: string | null = null; // Track creation time (public for template)
+  private isSaving: boolean = false; // Prevent concurrent saves
+  private saveTimeout: any = null; // Debounce save calls
 
   constructor(
     private googleSheetsService: GoogleSheetsService,
@@ -74,23 +76,12 @@ export class Home implements OnInit, OnDestroy {
 
     // Periodically save or update text in Google Sheets
     this.intervalId = setInterval(async () => {
-      console.log('Auto-save interval triggered');
-      console.log('Conditions:', {
-        hasText: !!this.userText,
-        textChanged: this.userText !== this.lastSavedText,
-        userText: this.userText.substring(0, 30) + '...',
-        lastSavedText: this.lastSavedText?.substring(0, 30) + '...'
-      });
-      
-      if (this.userText && this.userText !== this.lastSavedText) {
-        console.log('Text changed, attempting to save...');
+      if (this.userText && this.userText !== this.lastSavedText && !this.isSaving) {
         try {
           if (!this.accessToken) {
-            console.log('Getting valid access token...');
             this.accessToken = await this.authService.getValidAccessToken();
           }
           if (this.accessToken) {
-            console.log('Calling saveOrUpdateEntry...');
             await this.saveOrUpdateEntry();
           } else {
             console.error('Failed to get valid access token.');
@@ -98,74 +89,101 @@ export class Home implements OnInit, OnDestroy {
         } catch (error) {
           console.error('Error getting access token:', error);
         }
-      } else {
-        console.log('No changes detected, skipping save');
       }
     }, 25000); // Save every 25 seconds
+
+    // Add event listeners for window focus changes
+    this.addWindowEventListeners();
   }
 
   private async saveOrUpdateEntry(): Promise<void> {
-    console.log('saveOrUpdateEntry called');
-    console.log('Current state:', {
-      hasAccessToken: !!this.accessToken,
-      uniqueId: this.uniqueId,
-      userText: this.userText.substring(0, 50) + '...',
-      lastSavedText: this.lastSavedText?.substring(0, 50) + '...',
-      currentVersion: this.currentVersion
-    });
-
     if (!this.accessToken) {
       console.error('No access token available');
       return;
     }
 
-    const now = new Date().toISOString();
+    // Prevent concurrent saves
+    if (this.isSaving) {
+      console.log('Save already in progress, skipping...');
+      return;
+    }
+
+    this.isSaving = true;
+
+    try {
+      const now = new Date().toISOString();
+      
+      if (!this.uniqueId) {
+        // Create new entry
+        this.uniqueId = uuidv4();
+        this.createdAt = now;
+        this.currentVersion = 1;
+        
+        const newEntry: DiaryEntry = {
+          uniqueId: this.uniqueId,
+          text: this.userText,
+          createdAt: this.createdAt,
+          updatedAt: now,
+          version: this.currentVersion
+        };
+        
+        localStorage.setItem('uniqueId', this.uniqueId);
+        localStorage.setItem('createdAt', this.createdAt);
+        localStorage.setItem('currentVersion', this.currentVersion.toString());
+        
+        this.googleSheetsService.appendRow(this.accessToken, newEntry);
+        console.log(`New entry created - Version: ${this.currentVersion}`);
+      } else {
+        // Update existing entry with new version
+        this.currentVersion++;
+        
+        const updatedEntry: DiaryEntry = {
+          uniqueId: this.uniqueId,
+          text: this.userText,
+          createdAt: this.createdAt || now,
+          updatedAt: now,
+          version: this.currentVersion
+        };
+        
+        localStorage.setItem('currentVersion', this.currentVersion.toString());
+        
+        await this.googleSheetsService.updateRow(this.accessToken, updatedEntry);
+        console.log(`Entry updated - Version: ${this.currentVersion}`);
+      }
+      
+      this.lastSavedText = this.userText;
+      localStorage.setItem('userText', this.userText);
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  // Debounced save method to prevent duplicate saves
+  private debouncedSave(reason: string): void {
+    console.log(`Save triggered by: ${reason}`);
     
-    if (!this.uniqueId) {
-      console.log('Creating new entry...');
-      // Create new entry
-      this.uniqueId = uuidv4();
-      this.createdAt = now;
-      this.currentVersion = 1;
-      
-      const newEntry: DiaryEntry = {
-        uniqueId: this.uniqueId,
-        text: this.userText,
-        createdAt: this.createdAt,
-        updatedAt: now,
-        version: this.currentVersion
-      };
-      
-      console.log('New entry to save:', newEntry);
-      
-      localStorage.setItem('uniqueId', this.uniqueId);
-      localStorage.setItem('createdAt', this.createdAt);
-      localStorage.setItem('currentVersion', this.currentVersion.toString());
-      
-      this.googleSheetsService.appendRow(this.accessToken, newEntry);
-    } else {
-      console.log('Updating existing entry...');
-      // Update existing entry with new version
-      this.currentVersion++;
-      
-      const updatedEntry: DiaryEntry = {
-        uniqueId: this.uniqueId,
-        text: this.userText,
-        createdAt: this.createdAt || now,
-        updatedAt: now,
-        version: this.currentVersion
-      };
-      
-      console.log('Updated entry to save:', updatedEntry);
-      
-      localStorage.setItem('currentVersion', this.currentVersion.toString());
-      
-      await this.googleSheetsService.updateRow(this.accessToken, updatedEntry);
+    // Clear any existing timeout
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
     }
     
-    this.lastSavedText = this.userText;
-    localStorage.setItem('userText', this.userText);
-    console.log(`Entry saved/updated - Version: ${this.currentVersion}, Updated: ${now}`);
+    // Set a new timeout
+    this.saveTimeout = setTimeout(async () => {
+      if (this.userText && this.userText !== this.lastSavedText && !this.isSaving) {
+        try {
+          if (!this.accessToken) {
+            this.accessToken = await this.authService.getValidAccessToken();
+          }
+          if (this.accessToken) {
+            await this.saveOrUpdateEntry();
+          } else {
+            console.error('Failed to get valid access token');
+          }
+        } catch (error) {
+          console.error(`Error saving (${reason}):`, error);
+        }
+      }
+    }, 500); // 500ms debounce delay
   }
 
   ngOnDestroy() {
@@ -173,6 +191,51 @@ export class Home implements OnInit, OnDestroy {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
+    
+    // Clear any pending save timeout
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    
+    // Remove window event listeners
+    this.removeWindowEventListeners();
+  }
+
+  // Add window event listeners for save on focus change
+  private addWindowEventListeners(): void {
+    // Save when window loses focus (user switches to another app/tab)
+    window.addEventListener('blur', this.onWindowBlur.bind(this));
+    
+    // Save when page is about to be unloaded (user closes tab/navigates away)
+    window.addEventListener('beforeunload', this.onBeforeUnload.bind(this));
+  }
+
+  // Remove window event listeners
+  private removeWindowEventListeners(): void {
+    window.removeEventListener('blur', this.onWindowBlur.bind(this));
+    window.removeEventListener('beforeunload', this.onBeforeUnload.bind(this));
+  }
+
+  // Save when window loses focus
+  private async onWindowBlur(): Promise<void> {
+    this.debouncedSave('window blur');
+  }
+
+  // Save when page is about to be unloaded
+  private onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.userText && this.userText !== this.lastSavedText) {
+      // Try to save synchronously (limited time available)
+      console.log('Page unloading, attempting quick save...');
+      
+      // Update localStorage immediately
+      localStorage.setItem('userText', this.userText);
+      
+      // Show browser warning for unsaved changes
+      event.preventDefault();
+      event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+      return event.returnValue;
+    }
+    return undefined;
   }
 
   ngOnChanges() {
@@ -208,6 +271,12 @@ export class Home implements OnInit, OnDestroy {
   // Manual save method for testing
   public async manualSave(): Promise<void> {
     console.log('Manual save triggered');
+    
+    // Cancel any debounced save and save immediately
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    
     try {
       this.accessToken = await this.authService.getValidAccessToken();
       if (this.accessToken) {
@@ -218,6 +287,11 @@ export class Home implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error in manual save:', error);
     }
+  }
+
+  // Save when textarea loses focus
+  public async onTextareaBlur(): Promise<void> {
+    this.debouncedSave('textarea blur');
   }
 
   // Test API connectivity

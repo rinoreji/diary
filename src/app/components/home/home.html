@@ -6,12 +6,12 @@
 		<p><strong>Version:</strong> {{ currentVersion }}</p>
 		<button (click)="viewVersionHistory()" class="version-btn">View Version History</button>
 		<button (click)="manualSave()" class="version-btn" style="margin-left: 10px;">Manual Save</button>
-		<button (click)="testAPI()" class="version-btn" style="margin-left: 10px;">Test API</button>
 	</div>
 	<textarea 
 		[(ngModel)]="userText" 
 		placeholder="Start writing your diary entry here..."
-		class="diary-textarea">
+		class="diary-textarea"
+		(blur)="onTextareaBlur()">
 	</textarea>
 	<div class="save-status" *ngIf="lastSavedText === userText && userText">
 		✓ Saved automatically

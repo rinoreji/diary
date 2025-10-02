@@ -9,6 +9,8 @@
 - [x] Firebase authentication with API scopes
 - [x] Entry versioning with created/updated timestamps
 - [x] Version history tracking
+- [x] Token persistence and auto-refresh (no re-login on refresh)
+- [x] Enhanced error handling and debugging
 
 ## In Progress 🚧
 - [ ] Entry list sidebar with summaries

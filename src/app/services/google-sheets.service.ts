@@ -104,17 +104,8 @@ export class GoogleSheetsService {
     console.log('Request body:', body);
 
     this.http.post(url, body, { headers }).subscribe({
-      next: (response) => {
-        console.log('Row appended successfully:', response);
-        console.log('Response details:', JSON.stringify(response, null, 2));
-      },
-      error: (err) => {
-        console.error('Error appending row to Google Sheets:', err);
-        console.error('Error details:', JSON.stringify(err, null, 2));
-        console.error('Request URL:', url);
-        console.error('Request body:', JSON.stringify(body, null, 2));
-        console.error('Request headers:', JSON.stringify(headers, null, 2));
-      }
+      next: (response) => console.log('Row appended successfully:', response),
+      error: (err) => console.error('Error appending row to Google Sheets:', err)
     });
   }
 
